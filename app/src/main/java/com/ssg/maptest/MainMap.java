@@ -30,9 +30,6 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
     private static final int STROKE_WIDTH = 3;
     private double[] coordinates = new double[2];
 
-    private double latitude = 0;
-    private double longitude = 0;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,16 +46,14 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
 
         coordinates[0] = 40.8;
         coordinates[1] = -77.86;
-        lmap = googleMap;
         Log.d("LAT", Double.toString(coordinates[0]));
         Log.d("LONG", Double.toString(coordinates[1]));
+        ArrayList<Polygon> hexagons = plotHexMesh(coordinates, 1000);
+        lmap.addPolygon(hexagons);
     }
 
-    private void plotHexMesh(double[][] localcities) {
-        ArrayList<ArrayList<Polygon>> hexagons = new ArrayList<>();
-        for (double[] city : localcities) {
+    private ArrayList<Polygon> plotHexMesh(double[] city, int iterationnumber) {
             int scalefactor = 1000;
-            int iterationcount = (int) city[2] / scalefactor;
             ArrayList<Polygon> cityhexagons = new ArrayList<>();
             double[] center;
             Polygon centerhex = lmap.addPolygon(new PolygonOptions().clickable(true).fillColor(ACTIVE_COLOR).
@@ -70,12 +65,12 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
                     new LatLng(city[0], city[1] - elementlength * 2),
                     new LatLng(city[0] + elementlength * Math.pow(3, 0.5), city[1] - elementlength)));
             cityhexagons.add(centerhex);
-            for (double shell = 1; shell < iterationcount; shell ++) {
+            for (double shell = 1; shell < iterationnumber; shell ++) {
                 for (int side = 0; side < 6; side ++) {
                     for (double hexagon = 0; hexagon < shell - 1; hexagon ++) {
                         center = findCenter(city, elementlength * Math.pow(3, 0.5) / 2, shell, side, hexagon);
                         Polygon cityhex = lmap.addPolygon(new PolygonOptions().clickable(true).fillColor(FILL_COLOR).
-                                strokeWidth(STROKE_WIDTH).strokeColor(STROKE_COLOR).add (
+                                strokeWidth(STROKE_WIDTH).strokeColor(STROKE_COLOR).add(
                                 new LatLng(center[0] + elementlength * Math.pow(3, 0.5), center[1] + elementlength),
                                 new LatLng(center[0], center[1] + elementlength * 2),
                                 new LatLng(center[0] - elementlength * Math.pow(3, 0.5), center[1] + elementlength),
@@ -84,10 +79,9 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
                                 new LatLng(center[0] + elementlength * Math.pow(3, 0.5), center[1] - elementlength)));
                         cityhexagons.add(cityhex);
                     }
-                }
             }
-            hexagons.add(cityhexagons);
         }
+        return cityhexagons;
 
     }
 
@@ -99,7 +93,7 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
             center[0] = city[0] + (shell * 2 - hexagon) * elementlength;
             center[1] = city[1] + hexagon * elementlength * Math.pow(3, 0.5);
         }
-        else if (side == 1) {x
+        else if (side == 1) {
             center[0] = city[0] + (shell - hexagon * 2) * elementlength;
             center[1] = city[1] + shell * elementlength * Math.pow(3, 0.5);
         }
