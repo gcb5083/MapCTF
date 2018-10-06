@@ -13,6 +13,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
@@ -26,7 +27,8 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
 
     private GoogleMap lmap;
 
-    private double elementlength = 0.0025;
+    private double elementlength = 100 / 364567.2;
+    private int iter = 13;
 
     private static final int STROKE_COLOR = 0x999f87af;
     private static final int FILL_COLOR = 0x4488527f;
@@ -51,6 +53,7 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
 
         coordinates[0] = 40.8;
         coordinates[1] = -77.86;
+        int offset = (int) (iter * elementlength * 1.2);
         Log.d("LAT", Double.toString(coordinates[0]));
         Log.d("LONG", Double.toString(coordinates[1]));
         hexagons = plotHexMesh(coordinates, 10);
@@ -84,6 +87,7 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
                             new LatLng(center[0] + elementlength * Math.pow(3, 0.5), center[1] - elementlength)));
                     cityhexagons.add(cityhex);
                 }
+
             }
         }
         return cityhexagons;
