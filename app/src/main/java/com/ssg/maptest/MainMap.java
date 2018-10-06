@@ -11,6 +11,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
@@ -22,7 +23,8 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap lmap;
 
-    private double elementlength = 0.0025;
+    private double elementlength = 100 / 364567.2;
+    private int iter = 13;
 
     private static final int STROKE_COLOR = 0x999f87af;
     private static final int FILL_COLOR = 0x4488527f;
@@ -46,13 +48,19 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
 
         coordinates[0] = 40.8;
         coordinates[1] = -77.86;
+        int offset = (int) (iter * elementlength * 1.2);
         Log.d("LAT", Double.toString(coordinates[0]));
         Log.d("LONG", Double.toString(coordinates[1]));
-        ArrayList<Polygon> hexagons = plotHexMesh(coordinates, 10);
+//        LatLng location = new LatLng(coordinates[0], coordinates[1]);
+//        LatLng botleft = new LatLng(coordinates[0] - offset, coordinates[1] - offset);
+//        LatLng topright = new LatLng(coordinates[0] + offset, coordinates[1] + offset);
+//        LatLngBounds bounds = new LatLngBounds(botleft, topright);
+        ArrayList<Polygon> hexagons = plotHexMesh(coordinates, iter);
+//        lmap.setLatLngBoundsForCameraTarget(bounds);
+
     }
 
     private ArrayList<Polygon> plotHexMesh(double[] city, int iterationnumber) {
-            int scalefactor = 1000;
             ArrayList<Polygon> cityhexagons = new ArrayList<>();
             double[] center;
             Polygon centerhex = lmap.addPolygon(new PolygonOptions().clickable(true).fillColor(ACTIVE_COLOR).
