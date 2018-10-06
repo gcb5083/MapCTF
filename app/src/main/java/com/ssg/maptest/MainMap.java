@@ -48,8 +48,7 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback {
         coordinates[1] = -77.86;
         Log.d("LAT", Double.toString(coordinates[0]));
         Log.d("LONG", Double.toString(coordinates[1]));
-        ArrayList<Polygon> hexagons = plotHexMesh(coordinates, 1000);
-        lmap.addPolygon(hexagons);
+        ArrayList<Polygon> hexagons = plotHexMesh(coordinates, 10);
     }
 
     private ArrayList<Polygon> plotHexMesh(double[] city, int iterationnumber) {
