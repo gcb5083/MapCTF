@@ -56,7 +56,11 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         int offset = (int) (iter * elementlength * 1.2);
         Log.d("LAT", Double.toString(coordinates[0]));
         Log.d("LONG", Double.toString(coordinates[1]));
+        LatLng location = new LatLng(coordinates[0], coordinates[1]);
         hexagons = plotHexMesh(coordinates, 10);
+        lmap.moveCamera(CameraUpdateFactory.newLatLng(location));
+        lmap.setMaxZoomPreference(18);
+        lmap.setMinZoomPreference(14);
     }
 
     private LatLng getCenter(List<LatLng> points){
