@@ -17,10 +17,10 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
-import com.google.maps.android.SphericalUtil
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class MainMap extends FragmentActivity implements OnMapReadyCallback, LocationListener {
 
@@ -59,10 +59,21 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         hexagons = plotHexMesh(coordinates, 10);
     }
 
+    private LatLng getCenter(List<LatLng> points){
+        float sumLat = 0;
+        float sumLong = 0;
+        for ( int i =0; i< points.size(); i++){
+            sumLat += points.get(i).latitude;
+            sumLong += points.get(i).longitude;
+        }
+
+        return new LatLng( sumLat/points.size(), sumLong/points.size());
+    }
+
     private HashMap<LatLng, Polygon> plotHexMesh(double[] city, int iterationnumber) {
 //            Log.d("A","Ran plotHexMesh");
         int scalefactor = 1000;
-        ArrayList<Polygon> cityhexagons = new ArrayList<>();
+        hexagons = new HashMap<LatLng, Polygon>();
         double[] center;
         Polygon centerhex = lmap.addPolygon(new PolygonOptions().clickable(true).fillColor(ACTIVE_COLOR).
                 strokeWidth(STROKE_WIDTH).strokeColor(STROKE_COLOR).add (
@@ -72,7 +83,8 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
                 new LatLng(city[0] - elementlength * Math.pow(3, 0.5), city[1] - elementlength),
                 new LatLng(city[0], city[1] - elementlength * 2),
                 new LatLng(city[0] + elementlength * Math.pow(3, 0.5), city[1] - elementlength)));
-        cityhexagons.add(centerhex);
+
+        hexagons.put(getCenter(centerhex.getPoints()),centerhex);
         for (double shell = 1; shell < iterationnumber; shell ++) {
             for (int side = 0; side < 6; side ++) {
                 for (double hexagon = 0; hexagon < shell - 1; hexagon ++) {
@@ -85,12 +97,12 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
                             new LatLng(center[0] - elementlength * Math.pow(3, 0.5), center[1] - elementlength),
                             new LatLng(center[0], center[1] - elementlength * 2),
                             new LatLng(center[0] + elementlength * Math.pow(3, 0.5), center[1] - elementlength)));
-                    cityhexagons.add(cityhex);
+                    hexagons.put(getCenter(cityhex.getPoints()),cityhex);
                 }
 
             }
         }
-        return cityhexagons;
+        return hexagons;
 
     }
 
@@ -125,12 +137,17 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         return center;
     }
 
+    private double dist_sq(LatLng one, LatLng two){
+        return Math.pow(one.latitude - two.latitude, 2) + Math.pow(one.longitude - two.longitude, 2);
+    }
+
     private void setCurrentPolyColored(LatLng latlng){
+        //TODO:uncolor previous active one
         Polygon closest = null;
         double min_dist_sq = Integer.MAX_VALUE;
         for( LatLng l : hexagons.keySet()){
 //            double dist_sq = l;
-            double dist_sq = SphericalUtil.computeDistanceBetween(l, latlng);
+            double dist_sq = dist_sq(l, latlng);
             if ( dist_sq < min_dist_sq){
                 min_dist_sq = dist_sq;
                 closest = hexagons.get(l);
@@ -142,6 +159,7 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
 
     @Override
     public void onLocationChanged(Location location) {
+        Log.d("INFO:","onLocationChanged called");
         setCurrentPolyColored(new LatLng(location.getLatitude(), location.getLongitude()));
     }
 
