@@ -1,11 +1,13 @@
 package com.ssg.maptest;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -14,6 +16,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -28,10 +36,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class MainMap extends FragmentActivity implements OnMapReadyCallback, LocationListener {
+import org.json.JSONException;
+import org.json.JSONObject;
+
+
+public class MainMap extends FragmentActivity implements OnMapReadyCallback {
 
 
     private GoogleMap lmap;
+    private String url = "http://127.0.0.1";
 
     private double elementlength = 100 / 364567.2;
     private int iter = 13;
@@ -41,8 +54,11 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
     private static final int ACTIVE_COLOR = 0x66fcff6c;
     private static final int STROKE_WIDTH = 3;
     private double[] coordinates = new double[2];
-    HashMap<LatLng, Polygon> hexagons;
+    private HashMap<LatLng, Polygon> hexagons;
     private LocationManager locationManager;
+    private RequestQueue queue;
+    private String hints = "No Hints Provided.";
+    private long playerid;
     private String provider;
     double latitude; // latitude
     double longitude; // longitude
@@ -68,13 +84,35 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
             ActivityCompat.requestPermissions(MainMap.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},0);
             return;
         }
-        Log.d("CHECK--", "CHECK--");
+
+        locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 5, listener);
+
+        playerid = (long) (Math.random() * 1000000000) + 1000000000;
+
+        queue = Volley.newRequestQueue(this);
+
+        JsonObjectRequest getRequest = new JsonObjectRequest(Request.Method.GET, url + "/hints", null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        hints = response.toString();
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        }) {
+        };
+
+        queue.add(getRequest);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Capture Successful!", Snackbar.LENGTH_LONG)
+                Snackbar.make(view, hints, Snackbar.LENGTH_LONG)
                         .setAction("Captured", null).show();
 
             }
@@ -83,6 +121,35 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         fab.show();
         fab.bringToFront();
     }
+
+
+    private final LocationListener listener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            Location glocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            JSONObject request = new JSONObject();
+            try {
+                request.put("location", Long.toString(playerid) + "\t" + Double.toString(glocation.getLatitude()) + "\t" + Double.toString(glocation.getLongitude()));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+
+        }
+    };
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -94,6 +161,8 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         lmap.addMarker(new MarkerOptions().position(List).title("LIST"));
         lmap.moveCamera(CameraUpdateFactory.newLatLng(List));
         lmap.moveCamera(CameraUpdateFactory.zoomTo(8.0f));
+
+        LocationProvider provider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
         // Add a marker in Sydney and move the camera
         /*LatLng stateCollege = new LatLng(40.8, -77.86);
         lmap.addMarker(new MarkerOptions().position(stateCollege).title("State College, PA"));
@@ -114,6 +183,7 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         lmap.moveCamera(CameraUpdateFactory.newLatLng(location));
         lmap.setMaxZoomPreference(18);
         lmap.setMinZoomPreference(14);
+
     }
 
     private LatLng getCenter(List<LatLng> points){
@@ -193,32 +263,4 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         }
         return center;
     }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        Location glocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        lmap.addMarker(new MarkerOptions().position(new LatLng(glocation.getLatitude(), glocation.getLongitude())));
-        lmap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(glocation.getLatitude(), glocation.getLongitude())));
-    }
-
-    private double dist_sq(LatLng one, LatLng two){
-        return Math.pow(one.latitude - two.latitude, 2) + Math.pow(one.longitude - two.longitude, 2);
-    }
-
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
 }
