@@ -44,6 +44,10 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".Status"
+            android:label="@string/title_activity_status"
             android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
