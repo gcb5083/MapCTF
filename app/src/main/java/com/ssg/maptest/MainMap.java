@@ -1,10 +1,13 @@
 package com.ssg.maptest;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -38,6 +41,18 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
     private static final int STROKE_WIDTH = 3;
     private double[] coordinates = new double[2];
     HashMap<LatLng, Polygon> hexagons;
+    private LocationManager locationManager;
+    private String provider;
+    double latitude; // latitude
+    double longitude; // longitude
+    private boolean canGetLocation;
+    private Location glocation = null;
+    // The minimum distance to change Updates in meters
+    private static final long MIN_DISTANCE_CHANGE_FOR_UPDATES = 1;
+
+    // The minimum time between updates in milliseconds
+    //private static final long MIN_TIME_BW_UPDATES = 1000 * 60 * 1; // 60 minute
+    private static final long MIN_TIME_BW_UPDATES = 1000 * 1 * 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +62,12 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(MainMap.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION},0);
+            return;
+        }
+        Log.d("CHECK--", "CHECK--");
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -60,6 +81,22 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
     @Override
     public void onMapReady(GoogleMap googleMap) {
         lmap = googleMap;
+        // Set the long click listener as a way to exit the map.
+        //lmap.setOnMapLongClickListener(this);
+
+        LatLng List = new LatLng(40.803845, -77.865218);
+        lmap.addMarker(new MarkerOptions().position(List).title("LIST"));
+        lmap.moveCamera(CameraUpdateFactory.newLatLng(List));
+        lmap.moveCamera(CameraUpdateFactory.zoomTo(8.0f));
+        // Add a marker in Sydney and move the camera
+        /*LatLng stateCollege = new LatLng(40.8, -77.86);
+        lmap.addMarker(new MarkerOptions().position(stateCollege).title("State College, PA"));
+        lmap.moveCamera(CameraUpdateFactory.newLatLng(stateCollege));
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            return;
+        }
+        lmap.setMyLocationEnabled(true);*/
 
         coordinates[0] = 40.8;
         coordinates[1] = -77.86;
@@ -151,31 +188,17 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         return center;
     }
 
+    @Override
+    public void onLocationChanged(Location location) {
+        Location glocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        lmap.addMarker(new MarkerOptions().position(new LatLng(glocation.getLatitude(), glocation.getLongitude())));
+        lmap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(glocation.getLatitude(), glocation.getLongitude())));
+    }
+
     private double dist_sq(LatLng one, LatLng two){
         return Math.pow(one.latitude - two.latitude, 2) + Math.pow(one.longitude - two.longitude, 2);
     }
 
-    private void setCurrentPolyColored(LatLng latlng){
-        //TODO:uncolor previous active one
-        Polygon closest = null;
-        double min_dist_sq = Integer.MAX_VALUE;
-        for( LatLng l : hexagons.keySet()){
-//            double dist_sq = l;
-            double dist_sq = dist_sq(l, latlng);
-            if ( dist_sq < min_dist_sq){
-                min_dist_sq = dist_sq;
-                closest = hexagons.get(l);
-            }
-        }
-
-        closest.setFillColor(ACTIVE_COLOR);
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d("INFO:","onLocationChanged called");
-        setCurrentPolyColored(new LatLng(location.getLatitude(), location.getLongitude()));
-    }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
