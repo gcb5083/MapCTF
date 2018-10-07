@@ -7,6 +7,7 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -73,9 +74,14 @@ public class MainMap extends FragmentActivity implements OnMapReadyCallback, Loc
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                Snackbar.make(view, "Capture Successful!", Snackbar.LENGTH_LONG)
+                        .setAction("Captured", null).show();
 
             }
         });
+        fab.setSize(fab.SIZE_NORMAL);
+        fab.show();
+        fab.bringToFront();
     }
 
     @Override
